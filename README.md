@@ -1,6 +1,9 @@
 # 📊 台灣受薪族退休金試算系統 (Taiwan Retirement Calculator)
 > 專為台灣受薪階級設計的動態退休現金流模擬工具，幫助你將未來的「財務焦慮」轉化為清晰的「數據藍圖」。
 
+## 📸 工具預覽
+![退休試算系統截圖](screenshot.png)
+
 🔗 **[點此立即試用工具](https://williamzou0812.github.io/retirement-calculator/)**
 
 ## 💡 專案初衷
