@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>台灣受薪族退休試算系統｜Long 作品集</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --db:#0E2A45;--mb:#1A4A7A;--lb:#2E7BC4;--pb:#D6E8F7;--bgb:#EBF3FB;
+  --dg:#0F4C35;--mg:#1D8A5E;--pg:#C8EDE3;--bgg:#E8F8F2;
+  --am:#92660A;--amb:#FEF3C7;--ambd:#D4A017;
+  --rd:#B91C1C;--rdb:#FEE2E2;--pu:#5B21B6;--pub:#EDE9FE;
+  --g50:#F9FAFB;--g100:#F3F4F6;--g200:#E5E7EB;--g400:#9CA3AF;--g600:#4B5563;--g800:#1F2937;
+  --border:#E5E7EB;--text:#1F2937;
+}
+body{font-family:'Microsoft JhengHei','Noto Sans TC',Arial,sans-serif;background:var(--g50);color:var(--text);font-size:14px;line-height:1.6}
+/* HEADER */
+.hdr{background:linear-gradient(135deg,var(--db) 0%,var(--dg) 100%);color:#fff;padding:22px 20px 18px;text-align:center}
+.hdr h1{font-size:22px;font-weight:700;letter-spacing:2px;margin-bottom:4px}
+.hdr p{font-size:12px;opacity:.75;margin-bottom:10px}
+.badges{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.bdg{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);border-radius:20px;padding:2px 10px;font-size:11px}
+/* BARS */
+.gbar{background:#0E2A45;padding:9px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.gbar label{color:rgba(255,255,255,.7);font-size:12px;font-weight:600}
+.gbar select{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:4px 10px;border-radius:6px;font-size:12px;font-family:inherit;cursor:pointer}
+.gbar select option{background:#0E2A45}
+.gbar-note{margin-left:auto;font-size:11px;color:rgba(255,255,255,.38);font-style:italic}
+.vmbar{background:#163154;padding:8px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.vm-label{color:rgba(255,255,255,.75);font-size:12px;font-weight:700;white-space:nowrap}
+.vm-tgl{display:flex;border-radius:22px;overflow:hidden;border:1.5px solid rgba(255,255,255,.2);background:rgba(0,0,0,.22)}
+.vm-btn{padding:5px 18px;background:transparent;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(255,255,255,.48);transition:.2s;white-space:nowrap}
+.vm-btn:hover{color:rgba(255,255,255,.85)}
+.vm-act-both{background:#1D9E75!important;color:#fff!important;border-radius:20px}
+.vm-act-a{background:#1A5490!important;color:#fff!important;border-radius:20px}
+.vm-act-b{background:#0F4C35!important;color:#fff!important;border-radius:20px}
+.vm-ind{padding:3px 12px;border-radius:16px;font-size:11px;font-weight:700;margin-left:4px}
+.vm-ind-both{background:rgba(29,158,117,.25);color:#5DCAA5;border:1px solid rgba(29,158,117,.4)}
+.vm-ind-a{background:rgba(26,84,144,.3);color:#7DB8E8;border:1px solid rgba(26,84,144,.5)}
+.vm-ind-b{background:rgba(15,76,53,.3);color:#5DCAA5;border:1px solid rgba(15,76,53,.5)}
+.vm-note{margin-left:auto;font-size:11px;color:rgba(255,255,255,.35);font-style:italic}
+/* TABS */
+.tabs{background:#0B2035;padding:0 16px;display:flex;gap:0;overflow-x:auto;border-bottom:2px solid rgba(255,255,255,.08);scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabbtn{padding:11px 16px;background:transparent;border:none;color:rgba(255,255,255,.45);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;border-bottom:3px solid transparent;transition:.2s;margin-bottom:-2px}
+.tabBtn:hover{color:rgba(255,255,255,.8)}
+.tabBtn.active{color:#fff;border-bottom-color:#1D9E75}
+/* QUICK STATUS BAR */
+.statusbar{background:#fff;border-bottom:1px solid var(--border);padding:8px 20px;display:flex;gap:24px;flex-wrap:wrap;align-items:center}
+.sbitem{font-size:12px;color:var(--g600)}
+.sbitem strong{font-size:14px;font-weight:700;margin-left:4px}
+.sbitem.blue strong{color:var(--mb)} .sbitem.green strong{color:var(--dg)}
+.sbitem.amber strong{color:var(--am)} .sbitem.red strong{color:var(--rd)}
+/* LAYOUT */
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px}
+.tab-content{display:none} .tab-content.active{display:block}
+.sec{background:#fff;border-radius:12px;border:1px solid var(--border);margin-bottom:16px;overflow:hidden}
+.sec-hdr{padding:11px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:var(--g50)}
+.sec-hdr h2{font-size:14px;font-weight:700;color:var(--db);flex:1}
+.ico{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.sec-body{padding:16px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr}}
+/* PERSON PROFILE CARD */
+.pcrd{border:2px solid var(--border);border-radius:10px;overflow:hidden}
+.phdg{padding:10px 14px;color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px}
+.phdg.blue{background:var(--mb)} .phdg.green{background:var(--dg)}
+.pname-input{background:transparent;border:none;color:#fff;font-weight:700;font-size:14px;font-family:inherit;width:70px;outline:none;border-bottom:1.5px solid rgba(255,255,255,.4);padding:0 2px}
+.pbdy{padding:14px}
+.fgrp{margin-bottom:11px}
+.fgrp label{display:block;font-size:11px;color:var(--g600);margin-bottom:4px;font-weight:600;letter-spacing:.3px}
+.ninput{width:100%;border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;color:var(--text);background:var(--g50)}
+.ninput:focus{outline:none;border-color:var(--lb)}
+select{appearance:none;background:var(--g50);border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:13px;cursor:pointer;width:100%;font-family:inherit;color:var(--text)}
+select:focus{outline:none;border-color:var(--lb)}
+.tgl{display:flex;border-radius:7px;overflow:hidden;border:1px solid var(--border)}
+.tbn{flex:1;padding:6px 8px;background:#fff;border:none;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;transition:.2s;color:var(--g600)}
+.tbn.ag{background:var(--dg);color:#fff} .tbn.ar{background:var(--rd);color:#fff}
+.tbn.aa{background:var(--am);color:#fff} .tbn.ab{background:var(--mb);color:#fff}
+/* SLIDER */
+.slv{text-align:center;font-weight:700;font-size:20px;margin-bottom:3px;color:var(--db)}
+.slv.g{color:var(--dg)}
+input[type=range]{-webkit-appearance:none;height:5px;border-radius:3px;background:var(--g200);outline:none;width:100%;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--mb);cursor:pointer;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.slabels{display:flex;justify-content:space-between;font-size:10px;color:var(--g400);margin-top:2px}
+/* METRIC */
+.mcrd{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.mlbl{font-size:10px;color:var(--g400);font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.mval{font-size:20px;font-weight:700;margin-bottom:2px}
+.msub{font-size:10px;color:var(--g400)}
+.mcrd.bc{border-top:3px solid var(--mb)} .mcrd.bc .mval{color:var(--mb)}
+.mcrd.gc{border-top:3px solid var(--mg)} .mcrd.gc .mval{color:var(--dg)}
+.mcrd.ac{border-top:3px solid var(--am)} .mcrd.ac .mval{color:var(--am)}
+.mcrd.goc{border-top:3px solid #D97706} .mcrd.goc .mval{color:#92400E}
+.mcrd.rc{border-top:3px solid var(--rd)} .mcrd.rc .mval{color:var(--rd)}
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--db);color:#fff;padding:8px 9px;text-align:center;font-weight:600;font-size:11px}
+td{padding:7px 9px;text-align:center;border-bottom:1px solid var(--g100);color:var(--g800)}
+tr:hover td{background:var(--g50)}
+tr.sel-b td{background:var(--pb);font-weight:700;color:var(--mb)}
+tr.sel-g td{background:var(--pg);font-weight:700;color:var(--dg)}
+tr.sel-a td{background:#FEF9E7;font-weight:700;color:#92400E}
+/* ALERTS */
+.alt{border-radius:8px;padding:11px 14px;margin:8px 0;border-left:4px solid}
+.alt-title{font-weight:700;font-size:13px;margin-bottom:4px}
+.alt-text{font-size:12px;line-height:1.8}
+.alt.w{background:var(--amb);border-color:var(--am);color:var(--am)}
+.alt.s{background:var(--bgg);border-color:var(--mg);color:var(--dg)}
+.alt.d{background:var(--rdb);border-color:var(--rd);color:var(--rd)}
+.alt.i{background:var(--bgb);border-color:var(--lb);color:var(--mb)}
+.alt.p{background:var(--pub);border-color:var(--pu);color:var(--pu)}
+/* CHART */
+.chart-wrap{position:relative;height:280px}
+/* TIMELINE */
+.tl{display:flex;border-radius:8px;overflow:hidden;height:46px;margin:10px 0}
+.tls{display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;font-size:11px;font-weight:700}
+.tls span{font-size:9px;opacity:.85}
+/* TAGS */
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;margin-left:4px}
+.tg{background:var(--pg);color:var(--dg)} .tb{background:var(--pb);color:var(--mb)}
+.ta{background:#FEF3C7;color:#92660A} .tr{background:#FEE2E2;color:#B91C1C}
+.tp{background:var(--pub);color:var(--pu)}
+/* REC */
+.rec{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.rnum{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;margin-top:2px}
+.rtxt{font-size:13px;line-height:1.7}
+/* PROGRESS */
+.pbar-wrap{background:var(--g200);border-radius:5px;height:16px;overflow:hidden;margin:5px 0}
+.pbar-fill{height:100%;border-radius:5px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px;font-size:10px;font-weight:700;color:#fff}
+/* DECISION TIMELINE */
+.tline{border-left:3px solid var(--mb);margin-left:12px;padding-left:18px}
+.tline-item{position:relative;margin-bottom:14px}
+.tline-dot{position:absolute;left:-27px;top:3px;width:12px;height:12px;border-radius:50%;border:3px solid #fff}
+.tline-age{font-size:10px;font-weight:700;color:var(--g400);margin-bottom:1px}
+.tline-title{font-size:13px;font-weight:700;color:var(--db);margin-bottom:2px}
+.tline-desc{font-size:12px;color:var(--g600);line-height:1.6}
+/* PILL */
+.pill{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:700}
+.pill-g{background:var(--pg);color:var(--dg)} .pill-y{background:#FEF3C7;color:#92660A}
+.pill-r{background:#FEE2E2;color:#B91C1C} .pill-b{background:var(--pb);color:var(--mb)}
+/* LABOR */
+.sec-sub{font-size:12px;font-weight:700;color:var(--db);margin-bottom:7px;padding-bottom:3px;border-bottom:2px solid var(--pb)}
+.sec-sub.g{border-color:var(--pg);color:var(--dg)}
+/* VISIBILITY */
+.v-hide{display:none!important} .v-span{grid-column:1/-1!important}
+hr{border:none;border-top:1px solid var(--border);margin:12px 0}
+.notice{font-size:11px;color:var(--g400);font-style:italic;margin-top:6px}
+/* FORMULA NOTE */
+.formula-note{background:#F8FAFC;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--g600);margin-top:8px}
+.formula-note strong{color:var(--db)}
+</style>
+</head>
+<body>
+
+<!-- PORTFOLIO BANNER -->
+<div style="background:#1a1a2e;color:#a0aec0;text-align:center;padding:7px 16px;font-size:11px;letter-spacing:.5px">
+  🛠️ 作品展示｜開發者：Long｜歡迎合作洽詢 → <a href="mailto:your@email.com" style="color:#68d9a4;text-decoration:none">your@email.com</a>
+</div>
+<div class="hdr">
+  <h1>台灣受薪族退休試算系統</h1>
+  <p>勞保年金 × 勞退個人專戶 × 一次領 vs 月領 全方位規劃｜輸入資料，即時試算</p>
+  <div class="badges">
+    <span class="bdg">✅ 公式精算</span><span class="bdg">📅 61～70 歲全覆蓋</span>
+    <span class="bdg">⚖️ 一次領 vs 月領</span><span class="bdg">💸 通膨侵蝕</span>
+    <span class="bdg">🧪 空窗期壓力測試</span><span class="bdg">👨‍👩‍👧 夫妻雙人合算</span>
+    <span class="bdg">💼 勞退自提效益</span>
+  </div>
+</div>
+
+<div class="gbar">
+  <label>投報率假設</label>
+  <select id="rateSel" onchange="calc()">
+    <option value="0.02">2%（保守）</option>
+    <option value="0.03" selected>3%（中性）</option>
+    <option value="0.05">5%（積極）</option>
+  </select>
+  <label>壽命推估</label>
+  <select id="lifeSel" onchange="calc()">
+    <option value="75">75 歲</option>
+    <option value="80" selected>80 歲</option>
+    <option value="85">85 歲</option>
+    <option value="90">90 歲</option>
+    <option value="95">95 歲</option>
+  </select>
+  <span class="gbar-note">勞保年金依公式計算 · 勞退依帳戶餘額與級距推估 · 數字僅供規劃參考</span>
+</div>
+
+<div class="vmbar">
+  <span class="vm-label">👁 檢視</span>
+  <div class="vm-tgl">
+    <button class="vm-btn vm-act-both" id="vmBoth" onclick="setView('both')">👫 兩人合計</button>
+    <button class="vm-btn" id="vmA" onclick="setView('A')"><span id="vmALabel">👨 甲</span></button>
+    <button class="vm-btn" id="vmB" onclick="setView('B')"><span id="vmBLabel">👩 乙</span></button>
+  </div>
+  <span id="vmInd" class="vm-ind vm-ind-both">兩人合計</span>
+  <span class="vm-note">切換後所有計算即時對應</span>
+</div>
+
+<!-- TAB BAR -->
+<div class="tabs">
+  <button class="tabBtn active" id="tBtn-settings"  onclick="showTab('settings')">⚙️ 個人設定</button>
+  <button class="tabBtn"        id="tBtn-cashflow"  onclick="showTab('cashflow')">📊 現金流</button>
+  <button class="tabBtn"        id="tBtn-compare"   onclick="showTab('compare')">⚖️ 領法比較</button>
+  <button class="tabBtn"        id="tBtn-stress"    onclick="showTab('stress')">🧪 壓力測試</button>
+  <button class="tabBtn"        id="tBtn-charts"    onclick="showTab('charts')">📈 圖表分析</button>
+  <button class="tabBtn"        id="tBtn-labor"     onclick="showTab('labor')">💼 勞退試算</button>
+  <button class="tabBtn"        id="tBtn-strategy"  onclick="showTab('strategy')">🎯 行動計畫</button>
+</div>
+
+<!-- QUICK STATUS BAR -->
+<div class="statusbar">
+  <span class="sbitem blue">過渡期月收<strong id="sbTransit">—</strong></span>
+  <span class="sbitem green">65歲後月收<strong id="sbPension">—</strong></span>
+  <span class="sbitem amber">一次領<strong id="sbLump">—</strong></span>
+  <span class="sbitem red">回本年齡<strong id="sbBreak">—</strong></span>
+</div>
+
+<div class="wrap">
+
+<!-- ══ TAB 1: 個人設定 ════════════════════════════════════ -->
+<div id="tab-settings" class="tab-content active">
+  <div class="g2" id="settingsGrid">
+    <!-- Person A -->
+    <div class="pcrd" id="aCard">
+      <div class="phdg blue">
+        <span id="aEmoji">👨</span>
+        <input class="pname-input" id="aName" value="先生" onchange="syncLabels();calc()">
+        <select id="aGender" style="background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.4);color:#fff;width:44px;padding:0 2px;font-size:12px;border-radius:0" onchange="el('aEmoji').textContent=this.value==='m'?'👨':'👩';syncLabels();calc()">
+          <option value="m">男</option><option value="f">女</option>
+        </select>
+        <span style="margin-left:auto;font-size:11px;opacity:.7" id="aAgeToRetire"></span>
+      </div>
+      <div class="pbdy">
+        <div class="g2">
+          <div class="fgrp" style="margin:0 0 10px">
+            <label>目前年齡</label>
+            <input type="number" class="ninput" id="aAge" value="40" min="20" max="70" oninput="calc()">
+          </div>
+          <div class="fgrp" style="margin:0 0 10px">
+            <label>是否為原住民 <span style="font-weight:400;color:var(--g400);font-size:10px">（影響過渡期給付）</span></label>
+            <div class="tgl">
+              <button class="tbn"    id="aIndig1" onclick="tog2('aIndig','yes')">是</button>
+              <button class="tbn ar" id="aIndig2" onclick="tog2('aIndig','no')">否</button>
+            </div>
+          </div>
+        </div>
+        <div class="fgrp">
+          <label>平均月投保薪資 ($)
+            <span style="font-weight:400;color:var(--g400);font-size:10px">（可用目前薪資估算）</span>
+          </label>
+          <input type="number" class="ninput" id="aAvgSal" value="45800" min="0" step="100" oninput="calc()">
+        </div>
+        <div class="g2">
+          <div class="fgrp" style="margin:0 0 10px">
+            <label>目前已投保年資（年）</label>
+            <input type="number" class="ninput" id="aYears" value="18" min="0" max="50" oninput="calc()">
+          </div>
+          <div class="fgrp" style="margin:0 0 10px">
+            <label>勞退帳戶餘額 ($)</label>
+            <input type="number" class="ninput" id="aLaborBal" value="932738" min="0" step="1000" oninput="calc()">
+          </div>
+        </div>
+        <div class="fgrp">
+          <label>計畫退休年齡</label>
+          <div class="slv" id="aRetireLbl">65 歲</div>
+          <input type="range" id="aRetireAge" min="61" max="70" value="65" oninput="el('aRetireLbl').textContent=this.value+' 歲';calc()">
+          <div class="slabels"><span>61</span><span>63</span><span>65</span><span>67</span><span>70</span></div>
+        </div>
+        <div class="g2">
+          <div class="fgrp" style="margin:0">
+            <label>勞保請領方式</label>
+            <div class="tgl">
+              <button class="tbn ag" id="aM1" onclick="tog2('aM','monthly')">月領（推薦）</button>
+              <button class="tbn"    id="aM2" onclick="tog2('aM','lump')">一次領</button>
+            </div>
+          </div>
+          <div class="fgrp" style="margin:0" id="aIndigClaimWrap">
+            <label>原住民給付（過渡期）</label>
+            <div class="tgl">
+              <button class="tbn ag" id="aI1" onclick="tog2('aI','yes')">申請 $4,049</button>
+              <button class="tbn"    id="aI2" onclick="tog2('aI','no')">放棄</button>
+            </div>
+          </div>
+        </div>
+        <div class="formula-note" style="margin-top:10px">
+          <strong>勞保年金計算基礎</strong>：月領 = max（月薪 × 年資 × 1.55%，月薪 × 年資 × 1.3% + $3,000）。
+          65歲前提早申請每年折扣 4%，65歲後延後每年加成 4%（最高至70歲 +20%）。
+          實際金額以勞保局個人記錄為準，建議至「勞保局 e 化服務系統」查詢精確數字。
+        </div>
+      </div>
+    </div>
+    <!-- Person B -->
+    <div class="pcrd" id="bCard">
+      <div class="phdg green">
+        <span id="bEmoji">👩</span>
+        <input class="pname-input" id="bName" value="太太" onchange="syncLabels();calc()">
+        <select id="bGender" style="background:transparent;border:none;border-bottom:1.5px solid rgba(255,255,255,.4);color:#fff;width:44px;padding:0 2px;font-size:12px;border-radius:0" onchange="el('bEmoji').textContent=this.value==='m'?'👨':'👩';syncLabels();calc()">
+          <option value="m">男</option><option value="f" selected>女</option>
+        </select>
+        <span style="margin-left:auto;font-size:11px;opacity:.7" id="bAgeToRetire"></span>
+      </div>
+      <div class="pbdy">
+        <div class="g2">
+          <div class="fgrp" style="margin:0 0 10px">
+            <label>目前年齡</label>
+            <input type="number" class="ninput" id="bAge" value="38" min="20" max="70" oninput="calc()">
+          </div>
+          <div class="fgrp" style="margin:0 0 10px">
+            <label>是否為原住民 <span style="font-weight:400;color:var(--g400);font-size:10px">（影響過渡期給付）</span></label>
+            <div class="tgl">
+              <button class="tbn"    id="bIndig1" onclick="tog2('bIndig','yes')">是</button>
+              <button class="tbn ar" id="bIndig2" onclick="tog2('bIndig','no')">否</button>
+            </div>
+          </div>
+        </div>
+        <div class="fgrp">
+          <label>平均月投保薪資 ($)</label>
+          <input type="number" class="ninput" id="bAvgSal" value="36500" min="0" step="100" oninput="calc()">
+        </div>
+        <div class="g2">
+          <div class="fgrp" style="margin:0 0 10px">
+            <label>目前已投保年資（年）</label>
+            <input type="number" class="ninput" id="bYears" value="16" min="0" max="50" oninput="calc()">
+          </div>
+          <div class="fgrp" style="margin:0 0 10px">
+            <label>勞退帳戶餘額 ($)</label>
+            <input type="number" class="ninput" id="bLaborBal" value="486502" min="0" step="1000" oninput="calc()">
+          </div>
+        </div>
+        <div class="fgrp">
+          <label>計畫退休年齡</label>
+          <div class="slv g" id="bRetireLbl">65 歲</div>
+          <input type="range" id="bRetireAge" min="61" max="70" value="65" oninput="el('bRetireLbl').textContent=this.value+' 歲';calc()">
+          <div class="slabels"><span>61</span><span>63</span><span>65</span><span>67</span><span>70</span></div>
+        </div>
+        <div class="g2">
+          <div class="fgrp" style="margin:0">
+            <label>勞保請領方式</label>
+            <div class="tgl">
+              <button class="tbn ag" id="bM1" onclick="tog2('bM','monthly')">月領（推薦）</button>
+              <button class="tbn"    id="bM2" onclick="tog2('bM','lump')">一次領</button>
+            </div>
+          </div>
+          <div class="fgrp" style="margin:0" id="bIndigClaimWrap">
+            <label>原住民給付（過渡期）</label>
+            <div class="tgl">
+              <button class="tbn ag" id="bI1" onclick="tog2('bI','yes')">申請 $4,049</button>
+              <button class="tbn"    id="bI2" onclick="tog2('bI','no')">放棄</button>
+            </div>
+          </div>
+        </div>
+        <div class="formula-note" style="margin-top:10px">
+          <strong>年資估算說明</strong>：系統以「目前年資 + (退休年齡 - 目前年齡)」自動計算申請時年資。
+          若中間有職涯中斷，請手動調整年資數字以符合實際情況。
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:12px 0;display:flex;gap:12px;flex-wrap:wrap">
+    <div class="fgrp" style="flex:1;min-width:200px;margin:0">
+      <label style="font-size:12px;color:var(--g600);font-weight:600">家庭每月支出 ($)</label>
+      <input type="number" class="ninput" id="monthExpInput" value="50000" min="0" step="1000" oninput="calc()">
+    </div>
+    <div class="fgrp" style="flex:1;min-width:200px;margin:0">
+      <label style="font-size:12px;color:var(--g600);font-weight:600">目前家庭存款 ($)</label>
+      <input type="number" class="ninput" id="savingsInput" value="1500000" min="0" step="10000" oninput="calc()">
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 2: 現金流 ════════════════════════════════════════ -->
+<div id="tab-cashflow" class="tab-content">
+  <div class="g4" style="margin-bottom:16px">
+    <div class="mcrd bc"><div class="mlbl" id="lblTransit">過渡期月收</div><div class="mval" id="mTransit">—</div><div class="msub" id="subTransit">過渡期間</div></div>
+    <div class="mcrd gc"><div class="mlbl" id="lblPension">65歲後月收</div><div class="mval" id="mPension">—</div><div class="msub" id="subPension">終身月領</div></div>
+    <div class="mcrd ac"><div class="mlbl" id="lblLump">一次領總額</div><div class="mval" id="mLump">—</div><div class="msub" id="subLump">合計</div></div>
+    <div class="mcrd goc"><div class="mlbl">月領回本年齡</div><div class="mval" id="mBreak">—</div><div class="msub" id="subBreak">超過即月領完勝</div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hdr"><div class="ico" style="background:var(--pg)">📊</div><h2>退休現金流明細</h2><span class="tag tb" id="stratBadge">策略</span></div>
+    <div class="sec-body">
+      <div id="timelineWrap"></div>
+      <div class="g2" id="detailGrid">
+        <div id="aDetailWrap"><div class="sec-sub" id="aDetailTitle">先生 收入明細</div><div id="aDetail"></div></div>
+        <div id="bDetailWrap"><div class="sec-sub g" id="bDetailTitle">太太 收入明細</div><div id="bDetail"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-hdr"><div class="ico" style="background:var(--pb)">📋</div><h2 id="fullTableTitle">完整比較表（61～70 歲）</h2></div>
+    <div class="sec-body">
+      <div style="overflow-x:auto"><table id="fullTable"><thead id="fullThead"></thead><tbody id="fullTbody"></tbody></table></div>
+      <p class="notice">※ 66-70歲因年資增加及延後+4%/年加成，月領逐年提高。一次領上限45個月封頂。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 3: 領法比較 ════════════════════════════════════ -->
+<div id="tab-compare" class="tab-content">
+  <div class="sec">
+    <div class="sec-hdr"><div class="ico" style="background:#EDE9FE">⚖️</div><h2>一次領 vs 月領 決策分析</h2><span class="tag ta">回本年齡關鍵</span></div>
+    <div class="sec-body">
+      <div class="g2" id="compareGrid">
+        <div id="aCmpWrap"><div class="sec-sub" id="aCmpTitle">先生</div><div id="aCompare"></div></div>
+        <div id="bCmpWrap"><div class="sec-sub g" id="bCmpTitle">太太</div><div id="bCompare"></div></div>
+      </div>
+      <hr>
+      <div style="font-size:12px;font-weight:700;color:var(--db);margin-bottom:8px">各退休年齡回本年齡一覽（當前投報率）</div>
+      <div style="overflow-x:auto"><table id="breakTable"><thead id="breakThead"></thead><tbody id="breakTbody"></tbody></table></div>
+      <p class="notice">※ 回本年齡 = 一次領投資至65歲，月領累積超越一次領本金的時間點。台灣女性平均壽命約83歲，超過回本門檻的機率極高。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB 4: 壓力測試 ════════════════════════════════════ -->
+<div id="tab-stress" class="tab-content">
+  <div class="sec">
+    <div class="sec-hdr"><div class="ico" style="background:#FEE2E2">📉</div><h2>退休金缺口試算</h2></div>
+    <div class="sec-body" id="gapBody"></div>
+  </div>
+  <div class="sec">
+    <div class="sec-hdr"><div class="ico" style="background:var(--amb)">🧪</div><h2>空窗期財務壓力測試</h2></div>
+    <div class="sec-body" id="stressBody"></div>
+  </div>
+</div>
+
+<!-- ══ TAB 5: 圖表分析 ════════════════════════════════════ -->
+<div id="tab-charts" class="tab-content">
+  <div class="sec">
+    <div class="sec-hdr"><div class="ico" style="background:var(--pb)">📈</div><h2>終身累積收入模擬圖</h2><span class="tag tg" id="chartLabel">家庭合計</span></div>
+    <div class="sec-body">
+      <div class="chart-wrap"><canvas id="lifetimeChart"></canvas></div>
+      <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;font-size:11px">
+        <span><span style="display:inline-block;width:14px;height:3px;background:#1A4A7A;vertical-align:middle;margin-right:3px"></span>推薦策略（65歲啟動勞保）</span>
+        <span><span style="display:inline-block;width:14px;height:3px;background:#1D8A5E;vertical-align:middle;margin-right:3px"></span>提早月領</span>
+        <span><span style="display:inline-block;width:14px;height:0;border-top:2px dashed #D97706;vertical-align:middle;margin-right:3px"></span>一次領（固定）</span>
+      </div>
+      <hr style="margin:14px 0">
+      <div style="font-size:12px;font-weight:700;color:var(--db);margin-bottom:8px">年度收入流量（推薦策略）</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="annualChart"></canvas></div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-hdr"><div class="ico" style="background:#EDE9FE">📉</div><h2>通膨侵蝕試算</h2></div>
+    <div class="sec-body">
+      <div style="font-size:12px;color:var(--g600);margin-bottom:10px">月收入 <strong id="inflNominal">—</strong> 元在不同通膨率下的實質購買力變化。</div>
+      <div class="g3" id="inflCards"></div>
+      <div class="chart-wrap" style="height:220px;margin-top:14px"><canvas id="infChart"></canvas></div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-hdr"><div class="ico" style="background:var(--pb)">🤝</div><h2>遺屬年金試算</h2></div>
+    <div class="sec-body" id="survBody"></div>
+  </div>
+</div>
+
+<!-- ══ TAB 6: 勞退試算 ════════════════════════════════════ -->
+<div id="tab-labor" class="tab-content">
+  <div class="sec">
+    <div class="sec-hdr"><div class="ico" style="background:var(--bgg)">💰</div><h2>勞退帳戶：65歲預估餘額 × 自提效益</h2><span class="tag tg">動態試算</span></div>
+    <div class="sec-body" id="laborBody"></div>
+  </div>
+</div>
+
+<!-- ══ TAB 7: 行動計畫 ════════════════════════════════════ -->
+<div id="tab-strategy" class="tab-content">
+  <div class="sec">
+    <div class="sec-hdr"><div class="ico" style="background:var(--amb)">🎯</div><h2>最終戰略建議</h2></div>
+    <div class="sec-body" id="recBody"></div>
+  </div>
+  <div class="sec" id="indigSection" style="display:none">
+    <div class="sec-hdr"><div class="ico" style="background:#FEF3C7">🏔️</div><h2>原住民給付損益 + 排富條款檢查</h2></div>
+    <div class="sec-body">
+      <div class="g2" id="indGrid">
+        <div id="aIndWrap"><div id="aInd"></div></div>
+        <div id="bIndWrap"><div id="bInd"></div></div>
+      </div>
+      <hr>
+      <div style="font-size:12px;font-weight:700;color:var(--db);margin-bottom:8px">排富條款資格快速檢查</div>
+      <div class="g2" style="margin-bottom:10px">
+        <div><label style="font-size:11px;color:var(--g600);font-weight:600;display:block;margin-bottom:4px">年綜合所得 ($)</label>
+          <input type="number" class="ninput" id="richInc" value="0" min="0" step="10000" oninput="renderRichCheck()"></div>
+        <div><label style="font-size:11px;color:var(--g600);font-weight:600;display:block;margin-bottom:4px">名下不動產公告現值 ($)</label>
+          <input type="number" class="ninput" id="richProp" value="0" min="0" step="100000" oninput="renderRichCheck()"></div>
+      </div>
+      <div id="richResult"></div>
+      <div class="alt w" style="margin-top:10px"><div class="alt-title">重要說明</div>
+        <div class="alt-text">排富閾值（所得 ≈ $50萬/年、不動產 ≈ $500萬）為近似參考值，<strong>實際標準依原住民族委員會每年公告為準</strong>，申請前請向原民會或勞保局確認。</div>
+      </div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-hdr"><div class="ico" style="background:var(--pb)">📅</div><h2>退休決策時間軸</h2></div>
+    <div class="sec-body" id="timelineBody"></div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:14px 16px 8px;color:var(--g400);font-size:11px">
+  月領 = max（月薪×年資×1.55%，月薪×年資×1.3%+3,000）× 延後加成。勞退依帳戶餘額與級距推估。數字僅供規劃參考，實際以勞保局核定為準。
+</div>
+<div style="background:#0E2A45;color:rgba(255,255,255,.55);text-align:center;padding:16px;font-size:12px;line-height:1.9">
+  <div style="margin-bottom:4px">
+    <strong style="color:#fff">台灣受薪族退休試算系統</strong>｜開發 by <strong style="color:#68d9a4">Long</strong>
+  </div>
+  <div>客製化財務工具開發・Excel 自動化・Python 數據分析</div>
+  <div style="margin-top:6px">
+    📩 合作洽詢：<a href="mailto:your@email.com" style="color:#68d9a4;text-decoration:none">your@email.com</a>
+    &nbsp;·&nbsp;
+    🔗 <a href="https://github.com/yourname" style="color:#68d9a4;text-decoration:none">GitHub</a>
+  </div>
+  <div style="margin-top:8px;font-size:10px;opacity:.5">本工具為開放使用的個人作品，不構成任何財務建議</div>
+</div>
+</div><!-- /wrap -->
+
+<script>
+// ══ CONSTANTS ══════════════════════════════════════════════════
+const INDIG=4049, H_COEF=228, W_COEF=288;
+const RICH_INC=500000, RICH_PROP=5000000;
+
+// ══ LABOR BRACKET STATE ════════════════════════════════════════
+let aBrackets=[{s:43200,m:5},{s:45800,m:55}], aBracketAge=40, aVolPct=0;
+let bBrackets=[{s:43200,m:5},{s:45800,m:55}], bBracketAge=38, bVolPct=0;
+
+// ══ TOGGLE STATES ══════════════════════════════════════════════
+let ST={aIndig:'no',bIndig:'no',aM:'monthly',bM:'monthly',aI:'no',bI:'no'};
+let viewMode='both', infChartInst=null, lcInst=null, acInst=null;
+
+// ══ HELPERS ════════════════════════════════════════════════════
+const el=id=>document.getElementById(id);
+const inp=id=>+(el(id)?.value)||0;
+const fmt=n=>n==null?'—':'$'+Math.round(n).toLocaleString('zh-TW');
+const fmtM=n=>n==null?'—':'$'+Math.round(n/10000).toLocaleString()+'萬';
+const pct=n=>(n*100).toFixed(1)+'%';
+
+function getProfile(who){
+  const isA=who==='A';
+  const pfx=isA?'a':'b';
+  return{
+    id:who,
+    name:el(pfx+'Name')?.value||(isA?'先生':'太太'),
+    emoji:el(pfx+'Emoji')?.textContent||(isA?'👨':'👩'),
+    gender:el(pfx+'Gender')?.value||(isA?'m':'f'),
+    age:inp(pfx+'Age')||( isA?40:38),
+    indigenous:ST[pfx+'Indig']==='yes',
+    avgSalary:inp(pfx+'AvgSal')||(isA?45800:36500),
+    currentYears:inp(pfx+'Years')||(isA?18:16),
+    laborBal:inp(pfx+'LaborBal')||(isA?932738:486502),
+    retireAge:inp(pfx+'RetireAge')||(65),
+    claimMode:ST[pfx+'M'],
+    claimIndig:ST[pfx+'I'],
+    brackets:isA?aBrackets:bBrackets,
+    bracketAge:isA?aBracketAge:bBracketAge,
+    volPct:isA?aVolPct:bVolPct,
+    coef:(el(pfx+'Gender')?.value||'m')==='m'?H_COEF:W_COEF,
+  };
+}
+
+// ══ CORE CALCULATIONS ══════════════════════════════════════════
+function liMonthly(p, retireAge){
+  /* Recommended: claim at max(retireAge, 65) */
+  if(p.claimMode==='lump') return 0;
+  const claimAge=Math.max(retireAge,65);
+  const years=Math.max(0,p.currentYears+(claimAge-p.age));
+  const A=p.avgSalary*years*0.0155;
+  const B=p.avgSalary*years*0.013+3000;
+  const base=Math.max(A,B);
+  const adj=claimAge>65?1+0.04*Math.min(claimAge-65,5):1;
+  return Math.round(base*adj);
+}
+function liEarly(p, retireAge){
+  /* Early claim at retireAge (with discount) */
+  const years=Math.max(0,p.currentYears+(retireAge-p.age));
+  const A=p.avgSalary*years*0.0155;
+  const B=p.avgSalary*years*0.013+3000;
+  const base=Math.max(A,B);
+  const disc=retireAge<65?1-0.04*(65-retireAge):1;
+  return Math.round(base*disc);
+}
+function liLump(p, retireAge){
+  const years=Math.max(0,p.currentYears+(retireAge-p.age));
+  return Math.round(p.avgSalary*Math.min(years,45));
+}
+function projectLP(bal,brackets,vol,rate,years){
+  const r=rate/12, totalM=Math.round(years*12);
+  let used=0;
+  for(const b of brackets){
+    const n=Math.min(b.m,totalM-used); if(n<=0) break;
+    const mc=b.s*(0.06+vol/100);
+    bal=r===0?bal+mc*n:bal*Math.pow(1+r,n)+mc*(Math.pow(1+r,n)-1)/r;
+    used+=n; if(used>=totalM) break;
+  }
+  if(used<totalM&&brackets.length>0){
+    const n=totalM-used, mc=brackets[brackets.length-1].s*(0.06+vol/100);
+    bal=r===0?bal+mc*n:bal*Math.pow(1+r,n)+mc*(Math.pow(1+r,n)-1)/r;
+  }
+  return Math.round(bal);
+}
+function laborMonthlyAt(p, atAge, rate){
+  const years=Math.max(0,atAge-p.age);
+  const bal=projectLP(p.laborBal,p.brackets,p.volPct,rate,years);
+  return Math.round(bal/p.coef);
+}
+function transitMonthly(p, retireAge, rate){
+  if(retireAge>=65) return 0;
+  const lm=laborMonthlyAt(p,retireAge,rate);
+  const ind=(p.indigenous&&p.claimIndig==='yes')?INDIG:0;
+  return lm+ind;
+}
+function pensionMonthly(p, retireAge, rate){
+  /* Total monthly from max(retireAge,65): LI + labor at that age */
+  if(p.claimMode==='lump') return 0;
+  const claimAge=Math.max(retireAge,65);
+  return liMonthly(p,retireAge)+laborMonthlyAt(p,claimAge,rate);
+}
+function breakevenData(p, retireAge, rate){
+  const lump=liLump(p,retireAge);
+  const li=liMonthly(p,retireAge);
+  if(li===0) return null;
+  const invested=retireAge<65?lump*Math.pow(1+rate,65-retireAge):lump;
+  return{lump,invested,months:invested/li,beAge:65+invested/li/12};
+}
+
+// ══ TABS ═══════════════════════════════════════════════════════
+function showTab(t){
+  document.querySelectorAll('.tab-content').forEach(d=>d.classList.remove('active'));
+  document.querySelectorAll('.tabBtn').forEach(b=>b.classList.remove('active'));
+  el('tab-'+t).classList.add('active');
+  el('tBtn-'+t).classList.add('active');
+}
+
+// ══ VIEW MODE ══════════════════════════════════════════════════
+function setView(v){
+  viewMode=v;
+  ['Both','A','B'].forEach(x=>el('vm'+x).className='vm-btn');
+  el('vmBoth').classList.toggle('vm-act-both',v==='both');
+  el('vmA').classList.toggle('vm-act-a',v==='A');
+  el('vmB').classList.toggle('vm-act-b',v==='B');
+  const ind=el('vmInd');
+  const PA=getProfile('A'), PB=getProfile('B');
+  if(v==='both'){ind.className='vm-ind vm-ind-both';ind.textContent='兩人合計';}
+  else if(v==='A'){ind.className='vm-ind vm-ind-a';ind.textContent='僅看'+PA.name;}
+  else{ind.className='vm-ind vm-ind-b';ind.textContent='僅看'+PB.name;}
+  applyViewLayout(); calc();
+}
+function applyViewLayout(){
+  const v=viewMode, showA=v!=='B', showB=v!=='A', single=v!=='both';
+  const pairs=[['aCard','bCard'],['aDetailWrap','bDetailWrap'],
+               ['aCmpWrap','bCmpWrap'],['aIndWrap','bIndWrap']];
+  pairs.forEach(([a,b])=>{
+    if(el(a)){el(a).classList.toggle('v-hide',!showA);el(a).classList.toggle('v-span',single&&showA);}
+    if(el(b)){el(b).classList.toggle('v-hide',!showB);el(b).classList.toggle('v-span',single&&showB);}
+  });
+  const PA=getProfile('A'), PB=getProfile('B');
+  const who=single?(showA?PA.name:PB.name):'合計';
+  el('lblTransit').textContent=`過渡期${who}月收`;
+  el('lblPension').textContent=`65歲後${who}月收`;
+  el('lblLump').textContent=single?'一次領金額':'一次領合計';
+  el('subLump').textContent=single?(showA?PA.name:PB.name):'兩人合計';
+  el('chartLabel').textContent=single?(showA?PA.name:PB.name):'家庭合計';
+}
+function syncLabels(){
+  const PA=getProfile('A'), PB=getProfile('B');
+  el('vmALabel').textContent=PA.emoji+' '+PA.name;
+  el('vmBLabel').textContent=PB.emoji+' '+PB.name;
+}
+
+// ══ TOGGLES ════════════════════════════════════════════════════
+function tog2(key,val){
+  ST[key]=val;
+  const pfx=key.substring(0,1);  // 'a' or 'b'
+  const type=key.substring(1);   // 'Indig', 'M', 'I'
+  if(type==='Indig'){
+    el(pfx+'Indig1').className='tbn'+(val==='yes'?' ag':'');
+    el(pfx+'Indig2').className='tbn'+(val==='no'?' ar':'');
+    el(pfx+'IndigClaimWrap').classList.toggle('v-hide', val==='no');
+  } else if(type==='M'){
+    el(pfx+'M1').className='tbn'+(val==='monthly'?' ag':'');
+    el(pfx+'M2').className='tbn'+(val==='lump'?' ar':'');
+  } else if(type==='I'){
+    el(pfx+'I1').className='tbn'+(val==='yes'?' ag':'');
+    el(pfx+'I2').className='tbn'+(val==='no'?' aa':'');
+  }
+  calc();
+}
+
+// ══ MAIN CALC ══════════════════════════════════════════════════
+function calc(){
+  const rate=+el('rateSel').value, life=inp('lifeSel');
+  const PA=getProfile('A'), PB=getProfile('B');
+  const v=viewMode, showA=v!=='B', showB=v!=='A';
+
+  // Update age-to-retire labels
+  ['A','B'].forEach(w=>{
+    const p=getProfile(w), pfx=w.toLowerCase();
+    const yrs=Math.max(0,p.retireAge-p.age);
+    el(pfx+'AgeToRetire').textContent=`距65歲 ${Math.max(0,65-p.age).toFixed(0)}年`;
+  });
+  // Update indigenous claim visibility
+  el('aIndigClaimWrap').classList.toggle('v-hide', ST.aIndig==='no');
+  el('bIndigClaimWrap').classList.toggle('v-hide', ST.bIndig==='no');
+  // 動態顯示原住民區塊（只有勾選原住民時才顯示）
+  const anyIndig = ST.aIndig==='yes' || ST.bIndig==='yes';
+  const indigSec = el('indigSection');
+  if(indigSec) indigSec.style.display = anyIndig ? '' : 'none';
+
+  // Compute key values
+  const aBE=breakevenData(PA,PA.retireAge,rate);
+  const bBE=breakevenData(PB,PB.retireAge,rate);
+  const aTransit=transitMonthly(PA,PA.retireAge,rate);
+  const bTransit=transitMonthly(PB,PB.retireAge,rate);
+  const aPension=pensionMonthly(PA,PA.retireAge,rate);
+  const bPension=pensionMonthly(PB,PB.retireAge,rate);
+  const aLump=liLump(PA,PA.retireAge), bLump=liLump(PB,PB.retireAge);
+
+  const transitV=showA&&showB?aTransit+bTransit:showA?aTransit:bTransit;
+  const pensionV=showA&&showB?aPension+bPension:showA?aPension:bPension;
+  const lumpV=showA&&showB?aLump+bLump:showA?aLump:bLump;
+  const hasT=(showA&&PA.retireAge<65)||(showB&&PB.retireAge<65);
+
+  el('mTransit').textContent=hasT?fmt(transitV):'無過渡期';
+  el('subTransit').textContent=hasT?'至65歲前':'直接領正式期';
+  el('mPension').textContent=fmt(pensionV);
+  const bothLump=(!showA||PA.claimMode==='lump')&&(!showB||PB.claimMode==='lump');
+  el('subPension').textContent=bothLump?'已選一次領':'終身月領';
+  el('mLump').textContent=fmtM(lumpV);
+
+  if(v==='A'&&aBE){el('mBreak').textContent=aBE.beAge.toFixed(1)+'歲';el('subBreak').textContent=PA.name+'回本年齡';}
+  else if(v==='B'&&bBE){el('mBreak').textContent=bBE.beAge.toFixed(1)+'歲';el('subBreak').textContent=PB.name+'回本年齡';}
+  else if(aBE&&bBE){
+    const avg=(aBE.beAge+bBE.beAge)/2;
+    el('mBreak').textContent=avg.toFixed(1)+'歲';
+    el('subBreak').textContent=`${PA.name}${aBE.beAge.toFixed(1)} / ${PB.name}${bBE.beAge.toFixed(1)}歲`;
+  }
+
+  // Status bar
+  el('sbTransit').textContent=hasT?fmt(transitV):'—';
+  el('sbPension').textContent=fmt(pensionV);
+  el('sbLump').textContent=fmtM(lumpV);
+  el('sbBreak').textContent=aBE?aBE.beAge.toFixed(1)+'歲':'—';
+
+  // Strategy badge
+  const isBest=ST.aM==='monthly'&&ST.bM==='monthly'&&
+    (PA.indigenous?ST.aI==='yes':true)&&(PB.indigenous?ST.bI==='yes':true)&&
+    PA.retireAge<=65&&PB.retireAge<=65;
+  el('stratBadge').textContent=isBest?'黃金策略 ✓':(ST.aM==='lump'||ST.bM==='lump')?'一次領（非最優）':'月領策略';
+  el('stratBadge').className='tag '+(isBest?'tg':(ST.aM==='lump'||ST.bM==='lump')?'tr':'tb');
+
+  // Renders
+  renderTimeline(PA,PB,v);
+  el('aDetail').innerHTML=renderDetail(PA,rate,'a');
+  el('bDetail').innerHTML=renderDetail(PB,rate,'b');
+  el('aDetailTitle').textContent=PA.emoji+' '+PA.name+' 收入明細';
+  el('bDetailTitle').textContent=PB.emoji+' '+PB.name+' 收入明細';
+  renderFullTable(PA,PB,rate,v);
+  renderCompareTable(PA,PB,rate,v);
+  el('aCmpTitle').textContent=PA.emoji+' '+PA.name;
+  el('bCmpTitle').textContent=PB.emoji+' '+PB.name;
+  el('aCompare').innerHTML=renderCompare(PA,aBE,rate,'a');
+  el('bCompare').innerHTML=renderCompare(PB,bBE,rate,'b');
+  renderGap(PA,PB,rate,v);
+  renderStress(PA,PB,rate,v);
+  renderInflation(PA,PB,rate,life,v);
+  renderSurvivor(PA,PB,rate,v);
+  renderIndigenous(PA,PB,v);
+  renderRichCheck();
+  renderRec(PA,PB,aBE,bBE,v,rate);
+  renderDecisionTimeline(PA,PB,v);
+  renderLaborPension(PA,PB,rate,v);
+  updateCharts(PA,PB,rate,life,v);
+  syncLabels();
+}
+
+// ══ RENDER: Timeline ═══════════════════════════════════════════
+function renderTimeline(PA,PB,v){
+  const ages=v==='A'?[PA.retireAge]:v==='B'?[PB.retireAge]:[PA.retireAge,PB.retireAge];
+  const early=Math.min(...ages);
+  const who=v==='A'?PA.name:v==='B'?PB.name:'夫妻';
+  if(early>=65){
+    el('timelineWrap').innerHTML=`<div class="alt i" style="margin-bottom:10px">
+      <div class="alt-title">直接進入正式退休期</div>
+      <div class="alt-text">退休年齡 ≥ 65 歲，無過渡期。${Math.max(...ages)>65?'延後請領加成 +'+(Math.max(...ages)-65)*4+'%。':''}</div></div>`;
+    return;
+  }
+  const pT=Math.round((65-early)/(90-early)*100);
+  el('timelineWrap').innerHTML=`<div class="tl">
+    <div class="tls" style="background:var(--mb);width:${pT}%">${who}過渡期 ${early}～64歲<span>給付+勞退</span></div>
+    <div class="tls" style="background:var(--dg);width:${100-pT}%">正式退休 65歲起<span>勞保月領+勞退</span></div>
+  </div>`;
+}
+
+// ══ RENDER: Detail card ════════════════════════════════════════
+function renderDetail(p,rate,who){
+  const isE=p.retireAge<65;
+  const clr=who==='a'?'var(--mb)':'var(--dg)', bg=who==='a'?'var(--bgb)':'var(--bgg)';
+  const laborRetire=laborMonthlyAt(p,p.retireAge,rate);
+  const labor65=laborMonthlyAt(p,Math.max(p.retireAge,65),rate);
+  const li=liMonthly(p,p.retireAge);
+  let h=`<div style="background:${bg};border-radius:8px;padding:12px;font-size:13px">`;
+
+  if(p.claimMode==='lump'){
+    h+=`<div style="font-weight:700;color:var(--rd);margin-bottom:6px">⚠ 已選一次領</div>
+    <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+      <span>一次領金額（${Math.max(0,p.currentYears+(p.retireAge-p.age)).toFixed(0)}年資）</span>
+      <span style="font-weight:700">${fmt(liLump(p,p.retireAge))}</span></div>
+    <div style="margin-top:8px;font-size:11px;color:var(--rd)">選擇一次領後失去終身月領保障。</div>`;
+  } else {
+    if(isE){
+      const ind=(p.indigenous&&p.claimIndig==='yes')?INDIG:0;
+      h+=`<div style="font-weight:700;color:${clr};margin-bottom:6px">過渡期 ${p.retireAge}～64歲</div>`;
+      if(ind)h+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border)"><span>原住民老年給付</span><span style="font-weight:700;color:var(--am)">${fmt(INDIG)}</span></div>`;
+      h+=`<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border)"><span>勞退個人專戶月領</span><span style="font-weight:700;color:${clr}">${fmt(laborRetire)}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;font-weight:700"><span>過渡期月收</span><span style="color:${clr};font-size:15px">${fmt(laborRetire+ind)}</span></div><hr style="margin:7px 0">`;
+    }
+    const claimAge=Math.max(p.retireAge,65);
+    const yrs=Math.max(0,p.currentYears+(claimAge-p.age)).toFixed(0);
+    h+=`<div style="font-weight:700;color:${clr};margin-bottom:6px">${claimAge}歲起（終身）</div>
+    <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border)">
+      <span>勞保老年年金（${yrs}年資${claimAge>65?` +${(claimAge-65)*4}%`:''}）</span><span style="font-weight:700;color:${clr}">${fmt(li)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border)">
+      <span>勞退個人專戶</span><span style="font-weight:700;color:${clr}">${fmt(labor65)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:5px 0;font-weight:700">
+      <span>正式期月收</span><span style="color:${clr};font-size:15px">${fmt(li+labor65)}</span></div>`;
+    const be=breakevenData(p,p.retireAge,rate);
+    if(be)h+=`<div style="margin-top:8px;background:white;border-radius:6px;padding:5px 9px;font-size:11px;color:var(--g600)">
+      回本年齡：<strong>${be.beAge.toFixed(1)}歲</strong>（一次領${fmt(be.lump)}投資至65歲≒${fmt(be.invested)}）</div>`;
+  }
+  return h+'</div>';
+}
+
+// ══ RENDER: Full table ════════════════════════════════════════
+function renderFullTable(PA,PB,rate,v){
+  const showA=v!=='B', showB=v!=='A', both=v==='both';
+  if(both){
+    el('fullThead').innerHTML=`<tr><th rowspan="2">退休年齡</th>
+      <th colspan="2" style="background:var(--mb)">過渡期月收</th>
+      <th colspan="2" style="background:var(--dg)">正式期月收（65歲起）</th>
+      <th style="background:#0d4730">家庭月收</th>
+      <th colspan="2" style="background:#7C3AED">一次領試算</th></tr>
+    <tr><th style="background:#1e5fa0">${PA.name}</th><th style="background:#156a44">${PB.name}</th>
+      <th style="background:#163d6b">${PA.name}</th><th style="background:#156a44">${PB.name}</th>
+      <th style="background:#0d4730">合計</th>
+      <th style="background:#6D28D9">兩人合計</th><th style="background:#5B21B6">回本年齡</th></tr>`;
+  } else {
+    const p=showA?PA:PB, c=showA?'var(--mb)':'var(--dg)';
+    el('fullThead').innerHTML=`<tr><th>退休年齡</th><th style="background:${c}">過渡期月收</th>
+      <th style="background:${c}">正式期月收</th><th style="background:#6D28D9">一次領</th>
+      <th style="background:#5B21B6">回本年齡</th></tr>`;
+  }
+  let rows='';
+  for(let age=61;age<=70;age++){
+    const m=age>65?'*':'';
+    const selA=PA.retireAge===age, selB=PB.retireAge===age;
+    const rc=both?(selA&&selB?'sel-a':selA?'sel-b':selB?'sel-g':'')
+                  :(showA&&selA?'sel-b':showB&&selB?'sel-g':'');
+    if(both){
+      const at=transitMonthly({...PA,retireAge:age},age,rate);
+      const bt=transitMonthly({...PB,retireAge:age},age,rate);
+      const ap=pensionMonthly({...PA,retireAge:age},age,rate);
+      const bp=pensionMonthly({...PB,retireAge:age},age,rate);
+      const al=liLump({...PA,retireAge:age},age), bl=liLump({...PB,retireAge:age},age);
+      const abe=breakevenData({...PA,retireAge:age},age,rate);
+      const bbe=breakevenData({...PB,retireAge:age},age,rate);
+      const avgBE=abe&&bbe?((abe.beAge+bbe.beAge)/2).toFixed(1):'—';
+      rows+=`<tr class="${rc}"><td style="font-weight:700">${age}歲${m?`<sup>${m}</sup>`:''}</td>
+        <td>${age<65?fmt(at):'<span style="color:var(--g400)">—</span>'}</td>
+        <td>${age<65?fmt(bt):'<span style="color:var(--g400)">—</span>'}</td>
+        <td style="color:var(--mb);font-weight:600">${fmt(ap)}${m}</td>
+        <td style="color:var(--dg);font-weight:600">${fmt(bp)}${m}</td>
+        <td style="font-weight:700;font-size:13px;color:var(--dg)">${fmt(ap+bp)}${m}</td>
+        <td>${fmtM(al+bl)}</td><td style="color:var(--am);font-weight:700">${avgBE}歲</td></tr>`;
+    } else {
+      const p=showA?{...PA,retireAge:age}:{...PB,retireAge:age};
+      const clr=showA?'var(--mb)':'var(--dg)';
+      const tr=transitMonthly(p,age,rate);
+      const pe=pensionMonthly(p,age,rate);
+      const lp=liLump(p,age);
+      const be=breakevenData(p,age,rate);
+      rows+=`<tr class="${rc}"><td style="font-weight:700">${age}歲${m?`<sup>${m}</sup>`:''}</td>
+        <td>${age<65?fmt(tr):'<span style="color:var(--g400)">—</span>'}</td>
+        <td style="color:${clr};font-weight:700">${fmt(pe)}${m}</td>
+        <td>${fmtM(lp)}</td>
+        <td style="font-weight:700;color:var(--am)">${be?be.beAge.toFixed(1)+'歲':'—'}</td></tr>`;
+    }
+  }
+  el('fullTbody').innerHTML=rows;
+}
+
+// ══ RENDER: Compare table ══════════════════════════════════════
+function renderCompareTable(PA,PB,rate,v){
+  const showA=v!=='B', showB=v!=='A';
+  el('breakThead').innerHTML=`<tr><th>退休年齡</th>
+    ${showA?`<th style="background:var(--mb)">${PA.name}一次領</th><th style="background:var(--mb)">${PA.name}月領</th><th style="background:#163d6b">${PA.name}回本</th>`:''}
+    ${showB?`<th style="background:var(--dg)">${PB.name}一次領</th><th style="background:var(--dg)">${PB.name}月領</th><th style="background:#0d4730">${PB.name}回本</th>`:''}</tr>`;
+  let rows='';
+  for(let age=61;age<=70;age++){
+    const m=age>65?'*':'';
+    const selA=PA.retireAge===age, selB=PB.retireAge===age;
+    const rc=selA&&selB?'sel-a':selA?'sel-b':selB?'sel-g':'';
+    const abe=breakevenData({...PA,retireAge:age},age,rate);
+    const bbe=breakevenData({...PB,retireAge:age},age,rate);
+    rows+=`<tr class="${rc}"><td style="font-weight:700">${age}歲${m?`<sup>${m}</sup>`:''}</td>
+      ${showA?`<td>${fmtM(liLump({...PA,retireAge:age},age))}</td>
+      <td style="color:var(--mb);font-weight:600">${fmt(liMonthly({...PA,retireAge:age},age))}${m}</td>
+      <td style="font-weight:700;color:${abe&&abe.beAge>72?'var(--dg)':'var(--am)'}">${abe?abe.beAge.toFixed(1)+'歲':'—'}</td>`:''}
+      ${showB?`<td>${fmtM(liLump({...PB,retireAge:age},age))}</td>
+      <td style="color:var(--dg);font-weight:600">${fmt(liMonthly({...PB,retireAge:age},age))}${m}</td>
+      <td style="font-weight:700;color:${bbe&&bbe.beAge>72?'var(--dg)':'var(--am)'}">${bbe?bbe.beAge.toFixed(1)+'歲':'—'}</td>`:''}</tr>`;
+  }
+  el('breakTbody').innerHTML=rows;
+}
+
+// ══ RENDER: Compare panel ══════════════════════════════════════
+function renderCompare(p,be,rate,who){
+  const clr=who==='a'?'var(--mb)':'var(--dg)', bg=who==='a'?'var(--bgb)':'var(--bgg)';
+  const isE=p.retireAge<65, disc=isE?0.04*(65-p.retireAge):0;
+  const early=liEarly(p,p.retireAge);
+  const lump=liLump(p,p.retireAge);
+  const li=liMonthly(p,p.retireAge);
+  return `<div style="background:${bg};border-radius:8px;padding:12px;font-size:13px">
+    <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+      <span>一次領金額（${Math.max(0,p.currentYears+(p.retireAge-p.age)).toFixed(0)}年資）</span><span style="font-weight:700">${fmt(lump)}</span></div>
+    ${isE?`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+      <span>提早月領（折${pct(disc)}）</span><span style="font-weight:700;color:var(--rd)">${fmt(early)}</span></div>`:''}
+    <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+      <span>推薦月領（65歲全額${p.retireAge>65?` +${(p.retireAge-65)*4}%`:''}）</span><span style="font-weight:700;color:${clr}">${fmt(li)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:5px 0;font-weight:700">
+      <span>回本年齡</span><span style="color:var(--am);font-size:15px">${be?be.beAge.toFixed(1)+'歲':'—'}</span></div>
+    ${be?`<div style="background:white;border-radius:6px;padding:5px 9px;margin-top:4px;font-size:11px;color:var(--g600)">
+      一次領${fmt(lump)} → 投資至65歲≒<strong>${fmt(be.invested)}</strong><br>
+      月領${fmt(li)} × ${Math.round(be.months)}個月 = 回本</div>`:''}
+  </div>`;
+}
+
+// ══ RENDER: Gap ════════════════════════════════════════════════
+function renderGap(PA,PB,rate,v){
+  const exp=inp('monthExpInput'), showA=v!=='B', showB=v!=='A';
+  let rows='';
+  for(let age=61;age<=70;age++){
+    const at=showA&&showB?transitMonthly({...PA,retireAge:age},age,rate)+transitMonthly({...PB,retireAge:age},age,rate)
+      :showA?transitMonthly({...PA,retireAge:age},age,rate):transitMonthly({...PB,retireAge:age},age,rate);
+    const pe=showA&&showB?pensionMonthly({...PA,retireAge:age},age,rate)+pensionMonthly({...PB,retireAge:age},age,rate)
+      :showA?pensionMonthly({...PA,retireAge:age},age,rate):pensionMonthly({...PB,retireAge:age},age,rate);
+    const tg=exp-at, pg=exp-pe;
+    const selA=PA.retireAge===age, selB=PB.retireAge===age;
+    const rc=selA&&selB?'sel-a':selA?'sel-b':selB?'sel-g':'';
+    const warnRow=pg>0&&!rc?'row-warn':'';
+    rows+=`<tr class="${rc||warnRow}">
+      <td style="font-weight:700">${age}歲${age>65?'<sup>*</sup>':''}</td>
+      <td>${age<65?fmt(at):'—'}</td>
+      <td style="font-weight:700;color:${age<65&&tg<=0?'var(--mg)':'var(--rd)'}">${age<65?(tg<=0?'盈餘 +'+Math.abs(tg).toLocaleString():'缺口 '+Math.abs(tg).toLocaleString()):'—'}</td>
+      <td style="font-weight:700;color:var(--dg)">${fmt(pe)}${age>65?'*':''}</td>
+      <td style="font-weight:700;color:${pg<=0?'var(--mg)':'var(--rd)'}">${pg<=0?'盈餘 +'+Math.abs(pg).toLocaleString():'缺口 '+Math.abs(pg).toLocaleString()}</td>
+      <td>${age<65&&tg<=0&&pg<=0?'<span class="pill pill-g">全程盈餘</span>':pg<=0?'<span class="pill pill-y">過渡緊張</span>':'<span class="pill pill-r">長期不足</span>'}</td>
+    </tr>`;
+  }
+  el('gapBody').innerHTML=`<div style="font-size:12px;color:var(--g600);margin-bottom:10px">月支出設定：<strong>${fmt(exp)}</strong></div>
+  <div style="overflow-x:auto"><table><thead><tr><th>退休年齡</th><th style="background:var(--mb)">過渡月收</th>
+  <th style="background:#555">過渡期缺口</th><th style="background:var(--dg)">正式月收</th>
+  <th style="background:#0d4730">正式期盈餘</th><th>評估</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+// ══ RENDER: Stress ═════════════════════════════════════════════
+function renderStress(PA,PB,rate,v){
+  const exp=inp('monthExpInput'), savings=inp('savingsInput');
+  const showA=v!=='B', showB=v!=='A';
+  const retireAge=showA&&showB?Math.min(PA.retireAge,PB.retireAge):showA?PA.retireAge:PB.retireAge;
+  if(retireAge>=65){
+    el('stressBody').innerHTML=`<div class="alt s"><div class="alt-title">無過渡期壓力</div><div class="alt-text">退休年齡 ≥ 65 歲，直接領正式退休金，無空窗期。</div></div>`;
+    return;
+  }
+  const transitInc=(showA?transitMonthly(PA,retireAge,rate):0)+(showB?transitMonthly(PB,retireAge,rate):0);
+  const months=(65-retireAge)*12;
+  const gap=Math.max(0,exp-transitInc), need=gap*months, buf=savings-need;
+  const canCover=buf>=0, pct2=Math.min(100,need>0?savings/need*100:100);
+  let h=`<div class="g3" style="margin-bottom:14px">
+    <div class="mcrd bc"><div class="mlbl">每月缺口</div><div class="mval">${gap>0?fmt(gap):'無缺口'}</div><div class="msub">${months}個月過渡</div></div>
+    <div class="mcrd ${canCover?'gc':'rc'}"><div class="mlbl">所需存款</div><div class="mval">${fmt(need)}</div><div class="msub">過渡期總需</div></div>
+    <div class="mcrd ${canCover?'gc':'rc'}"><div class="mlbl">${canCover?'剩餘存款':'差距'}</div><div class="mval">${fmt(Math.abs(buf))}</div><div class="msub">${canCover?'到65歲餘':'仍不足'}</div></div>
+  </div>`;
+  if(gap>0){
+    h+=`<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+      <span style="font-weight:700">存款覆蓋率</span><span class="pill ${canCover?(buf/need>0.3?'pill-g':'pill-y'):'pill-r'}">${canCover?(buf/need>0.3?'充裕':'偏緊'):'不足'} ${pct2.toFixed(0)}%</span></div>
+    <div class="pbar-wrap"><div class="pbar-fill" style="width:${pct2}%;background:${canCover?'var(--mg)':'var(--rd)'}">
+      ${pct2>20?Math.round(pct2)+'%':''}</div></div>`;
+    h+=canCover
+      ?`<div class="alt s" style="margin-top:10px"><div class="alt-title">✓ 存款足夠支撐過渡期</div><div class="alt-text">存款${fmt(savings)}足以覆蓋${months}個月，到65歲尚餘${fmt(buf)}。</div></div>`
+      :`<div class="alt d" style="margin-top:10px"><div class="alt-title">⚠ 存款不足，建議延後退休</div><div class="alt-text">按${retireAge}歲退休，過渡期需${fmt(need)}，尚差${fmt(-buf)}。建議增加儲蓄目標或考慮延後至${retireAge+Math.ceil(-buf/gap/12)}歲以上。</div></div>`;
+  } else {
+    h+=`<div class="alt s"><div class="alt-title">✓ 零壓力</div><div class="alt-text">過渡期月收（${fmt(transitInc)}）≥ 月支出（${fmt(exp)}），無需動用存款。</div></div>`;
+  }
+  el('stressBody').innerHTML=h;
+}
+
+// ══ RENDER: Inflation ══════════════════════════════════════════
+function renderInflation(PA,PB,rate,life,v){
+  const showA=v!=='B', showB=v!=='A';
+  const nom=(showA?pensionMonthly(PA,PA.retireAge,rate):0)+(showB?pensionMonthly(PB,PB.retireAge,rate):0);
+  el('inflNominal').textContent=Math.round(nom).toLocaleString();
+  let cards='';
+  for(const [n] of [[10],[20],[25]]){
+    const r2=nom/Math.pow(1.02,n), r3=nom/Math.pow(1.03,n);
+    cards+=`<div class="mcrd" style="border-top:3px solid var(--pu)">
+      <div class="mlbl">${n}年後（約${65+n}歲）</div>
+      <div style="margin-bottom:3px"><span style="font-size:12px;color:var(--g600)">通膨2%：</span><span style="font-size:17px;font-weight:700;color:var(--pu)">${fmt(r2)}</span></div>
+      <div><span style="font-size:12px;color:var(--g600)">通膨3%：</span><span style="font-size:17px;font-weight:700;color:var(--rd)">${fmt(r3)}</span></div>
+      <div class="msub" style="margin-top:3px">損失約${Math.round((nom-r3)/nom*100)}%（@3%）</div>
+    </div>`;
+  }
+  el('inflCards').innerHTML=cards;
+  const retAge=showA&&showB?Math.min(PA.retireAge,PB.retireAge):showA?PA.retireAge:PB.retireAge;
+  const ages=[]; for(let a=retAge;a<=life;a++) ages.push(a);
+  const d2=ages.map(a=>Math.round(nom/Math.pow(1.02,a-retAge)));
+  const d3=ages.map(a=>Math.round(nom/Math.pow(1.03,a-retAge)));
+  const dN=ages.map(()=>Math.round(nom));
+  if(infChartInst)infChartInst.destroy();
+  infChartInst=new Chart(el('infChart').getContext('2d'),{type:'line',data:{labels:ages.map(a=>a+'歲'),datasets:[
+    {label:'名目金額',data:dN,borderColor:'#9CA3AF',borderDash:[6,3],borderWidth:2,pointRadius:0,fill:false},
+    {label:'通膨2%',data:d2,borderColor:'#7C3AED',backgroundColor:'rgba(124,58,237,.07)',borderWidth:2.5,pointRadius:0,fill:true,tension:.3},
+    {label:'通膨3%',data:d3,borderColor:'#B91C1C',backgroundColor:'rgba(185,28,28,.06)',borderWidth:2,pointRadius:0,fill:true,tension:.3,borderDash:[3,2]},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:14}},
+    tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toLocaleString()}元`}}},
+    scales:{x:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10},maxTicksLimit:12}},
+            y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10},callback:v=>'$'+v.toLocaleString()}}}}});
+}
+
+// ══ RENDER: Survivor ════════════════════════════════════════════
+function renderSurvivor(PA,PB,rate,v){
+  const showA=v!=='B', showB=v!=='A';
+  const aP=pensionMonthly(PA,PA.retireAge,rate), bP=pensionMonthly(PB,PB.retireAge,rate);
+  const both=aP+bP;
+  const bSurv=Math.round(bP+aP*0.5), aSurv=Math.round(aP+bP*0.5);
+  let h=`<div class="g3" style="margin-bottom:12px">
+    <div class="mcrd gc"><div class="mlbl">兩人健在</div><div class="mval">${fmt(both)}</div><div class="msub">合計月收</div></div>
+    <div class="mcrd ${(both-bSurv)/both>0.3?'rc':'ac'}"><div class="mlbl">${PA.name}先走 → ${PB.name}月收</div><div class="mval">${fmt(bSurv)}</div><div class="msub">減少${fmt(both-bSurv)}</div></div>
+    <div class="mcrd ${(both-aSurv)/both>0.3?'rc':'ac'}"><div class="mlbl">${PB.name}先走 → ${PA.name}月收</div><div class="mval">${fmt(aSurv)}</div><div class="msub">減少${fmt(both-aSurv)}</div></div>
+  </div>`;
+  h+=`<div class="g2"><div style="background:var(--bgb);border-radius:8px;padding:12px;font-size:13px">
+    <div style="font-weight:700;color:var(--mb);margin-bottom:8px">情境 A：${PA.name}先走</div>
+    <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border)"><span>${PB.name}自己月領</span><span style="font-weight:700;color:var(--dg)">${fmt(bP)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border)"><span>${PA.name}遺屬年金（50%）</span><span style="font-weight:700;color:var(--mb)">${fmt(Math.round(aP*0.5))}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:5px 0;font-weight:700"><span>合計月收</span><span style="color:var(--mb);font-size:14px">${fmt(bSurv)}</span></div>
+  </div>
+  <div style="background:var(--bgg);border-radius:8px;padding:12px;font-size:13px">
+    <div style="font-weight:700;color:var(--dg);margin-bottom:8px">情境 B：${PB.name}先走</div>
+    <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border)"><span>${PA.name}自己月領</span><span style="font-weight:700;color:var(--mb)">${fmt(aP)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border)"><span>${PB.name}遺屬年金（50%）</span><span style="font-weight:700;color:var(--dg)">${fmt(Math.round(bP*0.5))}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:5px 0;font-weight:700"><span>合計月收</span><span style="color:var(--dg);font-size:14px">${fmt(aSurv)}</span></div>
+  </div></div>`;
+  h+=`<div class="alt w" style="margin-top:10px"><div class="alt-title">注意事項</div><div class="alt-text">遺屬年金需配偶年滿55歲或達一定殘障程度，且未再婚。實際資格請向勞保局確認。</div></div>`;
+  el('survBody').innerHTML=h;
+}
+
+// ══ RENDER: Indigenous ════════════════════════════════════════
+function renderIndigenous(PA,PB,v){
+  function ind(p,who,bg,clr){
+    if(!p.indigenous) return`<div style="background:var(--g100);border-radius:8px;padding:12px;font-size:13px;color:var(--g400)">非原住民身分，不適用原住民給付。</div>`;
+    if(p.retireAge>=65) return`<div style="background:var(--g100);border-radius:8px;padding:12px;font-size:13px;color:var(--g400)">退休年齡 ≥ 65 歲，原住民給付依法停發，不影響策略。</div>`;
+    const yrs=65-p.retireAge, total=INDIG*12*yrs;
+    return`<div style="background:${bg};border-radius:8px;padding:12px;font-size:13px">
+      <div style="font-weight:700;color:${clr};margin-bottom:8px">${p.emoji} ${p.name}（${p.retireAge}歲退休）</div>
+      <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(0,0,0,.06)"><span>過渡期年數</span><span style="font-weight:700">${yrs}年</span></div>
+      <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(0,0,0,.06)"><span>每月給付</span><span style="font-weight:700;color:var(--am)">${fmt(INDIG)}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(0,0,0,.06)"><span>過渡期可領總額</span><span style="font-weight:700;color:${clr}">${fmtM(total)}</span></div>
+      <div style="margin-top:8px;background:white;border-radius:6px;padding:5px 8px;font-size:11px;color:var(--rd)">⚠ 65歲前動用勞保（任何形式），<strong>立即喪失全部原住民給付</strong>。</div>
+    </div>`;
+  }
+  el('aInd').innerHTML=ind(PA,'A','var(--bgb)','var(--mb)');
+  el('bInd').innerHTML=ind(PB,'B','var(--bgg)','var(--dg)');
+}
+
+// ══ RENDER: Rich check ════════════════════════════════════════
+function renderRichCheck(){
+  const inc=inp('richInc'), prop=inp('richProp');
+  if(!inc&&!prop){el('richResult').innerHTML=`<div class="alt i"><div class="alt-title">請輸入年所得與不動產資料</div></div>`;return;}
+  const iOk=inc<=RICH_INC, pOk=prop<=RICH_PROP, ok=iOk&&pOk;
+  el('richResult').innerHTML=ok
+    ?`<div class="alt s"><div class="alt-title">✓ 初步符合資格（近似評估）</div><div class="alt-text">年所得${fmt(inc)}（閾值≈${fmt(RICH_INC)}，餘${fmt(RICH_INC-inc)}）；不動產${fmt(prop)}（閾值≈${fmt(RICH_PROP)}，餘${fmt(RICH_PROP-prop)}）。仍請向原民會確認最新標準。</div></div>`
+    :`<div class="alt d"><div class="alt-title">⚠ 可能不符合資格（近似評估）</div><div class="alt-text">${!iOk?`年所得超額${fmt(inc-RICH_INC)}。`:''}${!pOk?`不動產超額${fmt(prop-RICH_PROP)}。`:''} 建議向原民會諮詢。</div></div>`;
+}
+
+// ══ RENDER: Recommendations ═══════════════════════════════════
+function renderRec(PA,PB,aBE,bBE,v,rate){
+  const showA=v!=='B', showB=v!=='A';
+  let issues='';
+  if(showA&&ST.aM==='lump')issues+=`<div class="alt d" style="margin:4px 0"><strong>⚠ ${PA.name}已選一次領</strong><br>回本${aBE?aBE.beAge.toFixed(1):'—'}歲，活超過即月領完勝。</div>`;
+  if(showB&&ST.bM==='lump')issues+=`<div class="alt d" style="margin:4px 0"><strong>⚠ ${PB.name}已選一次領</strong><br>回本${bBE?bBE.beAge.toFixed(1):'—'}歲，強烈建議切換月領。</div>`;
+  if(showA&&PA.indigenous&&ST.aI==='no'&&PA.retireAge<65)issues+=`<div class="alt w" style="margin:4px 0"><strong>${PA.name}放棄原住民給付</strong><br>損失上限：${fmtM(INDIG*12*(65-PA.retireAge))}。</div>`;
+  if(showB&&PB.indigenous&&ST.bI==='no'&&PB.retireAge<65)issues+=`<div class="alt w" style="margin:4px 0"><strong>${PB.name}放棄原住民給付</strong><br>損失上限：${fmtM(INDIG*12*(65-PB.retireAge))}。</div>`;
+  const aP65=pensionMonthly(PA,65,rate), bP65=pensionMonthly(PB,65,rate);
+  const strats=[
+    {c:'var(--rd)',t:'戰略一：拒絕一次領',b:`回本門檻：${showA?PA.name+(aBE?aBE.beAge.toFixed(1):'—')+'歲':''}${showA&&showB?' / ':''}${showB?PB.name+(bBE?bBE.beAge.toFixed(1):'—')+'歲':''}。台灣女性平均壽命83歲遠超門檻，月領為終身保障，一次領是固定天花板。`},
+    {c:'var(--am)',t:'戰略二：65歲前守住原住民給付',b:`65歲前任何勞保請領行為，立即喪失每月 ${fmt(INDIG)} 原住民給付。${showA&&PA.indigenous&&PA.retireAge<65?PA.name+'過渡期損失上限：'+fmtM(INDIG*12*(65-PA.retireAge))+'。':''}${showB&&PB.indigenous&&PB.retireAge<65?PB.name+'過渡期損失上限：'+fmtM(INDIG*12*(65-PB.retireAge))+'。':''}`},
+    {c:'var(--mg)',t:'戰略三：壓到65歲啟動全額勞保',b:`65歲退休家庭月收：<strong>${fmt((showA?aP65:0)+(showB?bP65:0))}</strong>。提早離職無妨，但勞保務必壓到65歲再申請。`},
+  ];
+  let h='';
+  if(issues)h+=`<div class="alt w" style="margin-bottom:12px"><div class="alt-title">⚡ 當前設定提醒</div>${issues}</div>`;
+  strats.forEach((s,i)=>{h+=`<div class="rec"><div class="rnum" style="background:${s.c};color:#fff">${i+1}</div><div class="rtxt"><strong>${s.t}</strong><br>${s.b}</div></div>`;});
+  h+=`<div class="alt s" style="margin-top:14px"><div class="alt-title">終極黃金戰略</div><div class="alt-text">提早離職無妨，以「勞退個人專戶 ＋ 原住民給付」度過65歲前空窗期。勞保<strong>壓到65歲請全額月領</strong>，退休金效益最大化。</div></div>`;
+  el('recBody').innerHTML=h;
+}
+
+// ══ RENDER: Decision timeline ══════════════════════════════════
+function renderDecisionTimeline(PA,PB,v){
+  const showA=v!=='B', showB=v!=='A';
+  const minRetire=showA&&showB?Math.min(PA.retireAge,PB.retireAge):showA?PA.retireAge:PB.retireAge;
+  const maxRetire=showA&&showB?Math.max(PA.retireAge,PB.retireAge):minRetire;
+  const steps=[
+    {age:55,color:'var(--mb)',t:'確認勞保年資與試算',d:'查詢勞保累計年資。使用本系統試算各退休年齡的月領金額。確認儲蓄缺口並開始規劃。'},
+    {age:58,color:'var(--am)',t:'排富條款確認（原住民）',d:'向原住民族委員會確認排富標準（年所得、不動產）。若接近門檻，提早規劃調整。'},
+    {age:60,color:'var(--am)',t:'最終財務確認',d:'確認存款足夠支撐過渡期缺口。評估是否提前清償貸款。勞保此時不要動！'},
+    {age:minRetire,color:'var(--dg)',t:`${minRetire}歲：提早退休（過渡期開始）`,d:`退休後向勞保局申請「原住民老年給付」（每月 ${fmt(INDIG)}）。同步申請勞退個人專戶月領。勞保老年年金此時千萬不要申請！`},
+    minRetire!==maxRetire?{age:maxRetire,color:'var(--mg)',t:`${maxRetire}歲：另一人退休`,d:`此時${minRetire<65?'過渡期尚未結束，':''} 繼續維持勞保不申請策略。`}:null,
+    {age:65,color:'#B91C1C',t:'65歲：啟動勞保全額月領',d:'原住民給付依法停發。立即向勞保局申請「勞保老年年金」——此時為全額不打折版本。若已滿65歲且選擇繼續工作，每延後1年加成4%，最高70歲+20%。'},
+    maxRetire>65?{age:maxRetire,color:'var(--mg)',t:`${maxRetire}歲：正式退休（延後+${(maxRetire-65)*4}%）`,d:`延後請領加成已生效。月領：${showA?PA.name+fmt(liMonthly(PA,PA.retireAge)):''}${showA&&showB?' + ':''}${showB?PB.name+fmt(liMonthly(PB,PB.retireAge)):''}。`}:null,
+  ].filter(Boolean);
+
+  let h=`<div class="tline">`;
+  steps.forEach(s=>{
+    h+=`<div class="tline-item">
+      <div class="tline-dot" style="background:${s.color};box-shadow:0 0 0 2px ${s.color}"></div>
+      <div class="tline-age">${s.age} 歲</div>
+      <div class="tline-title" style="color:${s.color}">${s.t}</div>
+      <div class="tline-desc">${s.d}</div>
+    </div>`;
+  });
+  h+=`</div><div class="alt i" style="margin-top:10px"><div class="alt-title">關鍵原則</div>
+  <div class="alt-text">離職 ≠ 領勞保。這是最重要的一個觀念。任何時候都可以離職，但<strong>勞保老年年金的申請時機</strong>決定了一生的退休金水準。</div></div>`;
+  el('timelineBody').innerHTML=h;
+}
+
+// ══ RENDER: Labor Pension ══════════════════════════════════════
+function addBracket(who){const arr=who==='a'?aBrackets:bBrackets;arr.push({s:arr.length?arr[arr.length-1].s:45800,m:12});renderLaborPension(getProfile('A'),getProfile('B'),+el('rateSel').value,viewMode);}
+function removeBracket(who,i){if(who==='a')aBrackets.splice(i,1);else bBrackets.splice(i,1);renderLaborPension(getProfile('A'),getProfile('B'),+el('rateSel').value,viewMode);}
+function updateLP(){
+  ['a','b'].forEach(who=>{
+    const br=who==='a'?aBrackets:bBrackets, vp=who==='a'?aVolPct:bVolPct;
+    const clr=who==='a'?'var(--mb)':'var(--dg)';
+    const age=who==='a'?aBracketAge:bBracketAge;
+    const totalM=Math.round(Math.max(0,65-age)*12);
+    const totalBM=br.reduce((s,b)=>s+b.m,0);
+    const extra=totalM-totalBM;
+    br.forEach((b,i)=>{
+      const empC=el(who+'emp'+i), volC=el(who+'vol'+i);
+      if(empC){empC.textContent=fmt(Math.round(b.s*0.06));empC.style.color=clr;}
+      if(volC){
+        if(vp>0){volC.textContent=fmt(Math.round(b.s*vp/100));volC.style.color='var(--am)';}
+        else{volC.textContent='—';volC.style.color='var(--g400)';}
+      }
+    });
+    const hdr=el(who+'volhdr');
+    if(hdr) hdr.textContent=`自提(${vp}%)`;
+    for(let p=0;p<=6;p++){
+      const btn=el(who+'vbtn'+p); if(!btn) continue;
+      const active=vp===p;
+      btn.style.background=active?clr:'white';
+      btn.style.color=active?'white':'var(--g600)';
+      btn.style.border=`1.5px solid ${active?clr:'var(--border)'}`;
+    }
+    const cov=el(who+'cov');
+    if(cov){
+      const c=extra>0?'var(--am)':extra<0?'var(--rd)':'var(--mg)';
+      cov.style.color=c;
+      cov.textContent=extra>0?`已設${totalBM}月，剩餘${extra}月以最後薪資延伸`
+        :extra<0?`⚠ 超出${-extra}月（忽略超出部分）`:'✓ 剛好覆蓋至65歲';
+    }
+  });
+  const lpRes=el('lprojSection');
+  if(lpRes) lpRes.innerHTML=buildLPResults();
+}
+function buildBracketPanel(who,p,rate){
+  const isA=who==='a'; const brackets=isA?aBrackets:bBrackets;
+  const volPct=isA?aVolPct:bVolPct; const age=isA?aBracketAge:bBracketAge;
+  const clr=isA?'var(--mb)':'var(--dg)', bg=isA?'var(--bgb)':'var(--bgg)';
+  const thBg=isA?'var(--mb)':'var(--dg)', thBg2=isA?'#163d6b':'#0d4730';
+  const totalM=Math.round(Math.max(0,65-age)*12), totalBM=brackets.reduce((s,b)=>s+b.m,0), extra=totalM-totalBM;
+  const covCls=extra>0?'var(--am)':extra<0?'var(--rd)':'var(--mg)';
+  const covTxt=extra>0?`已設${totalBM}月，剩餘${extra}月以最後薪資延伸`:extra<0?`⚠ 超出${-extra}月（忽略超出部分）`:'✓ 剛好覆蓋至65歲';
+  let h=`<div style="background:${bg};border-radius:10px;padding:14px;font-size:13px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-weight:700;font-size:14px;color:${clr}">${p.emoji} ${p.name}</span>
+      <span style="font-size:12px;color:var(--g600)">年齡</span>
+      <input type="number" value="${age}" min="20" max="64" style="width:50px;padding:3px 6px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:inherit;text-align:center"
+        onchange="${who}BracketAge=Math.max(20,Math.min(64,+this.value));updateLP()">
+      <span style="font-size:11px;color:var(--g400)">歲 → 距65歲 ${(65-age).toFixed(0)}年（${totalM}月）</span>
+      <span style="margin-left:auto;font-size:11px;font-weight:700;color:${clr}">餘額：${fmt(p.laborBal)}</span>
+    </div>
+    <table style="width:100%;font-size:12px;margin-bottom:6px">
+      <thead><tr>
+        <th style="background:${thBg};padding:5px 7px;text-align:left;border-radius:4px 0 0 0">月投保薪資</th>
+        <th style="background:${thBg};padding:5px 7px">投保月數</th>
+        <th style="background:${thBg2};padding:5px 7px">雇主(6%)</th>
+        <th id="${who}volhdr" style="background:${thBg2};padding:5px 7px;border-radius:0 4px 0 0">自提(${volPct}%)</th>
+        <th style="background:#444;padding:5px 7px">刪</th>
+      </tr></thead><tbody>`;
+  brackets.forEach((b,i)=>{
+    h+=`<tr>
+      <td style="padding:3px 3px;border-bottom:1px solid var(--border)">
+        <input type="number" value="${b.s}" min="0" step="100" style="width:82px;padding:3px 6px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:inherit"
+          oninput="${who}Brackets[${i}].s=Math.max(0,+this.value);updateLP()">
+      </td>
+      <td style="padding:3px;border-bottom:1px solid var(--border);text-align:center">
+        <input type="number" value="${b.m}" min="1" max="600" step="1" style="width:50px;padding:3px 6px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:inherit;text-align:center"
+          oninput="${who}Brackets[${i}].m=Math.max(1,+this.value);updateLP()">
+        <span style="color:var(--g400)">月</span>
+      </td>
+      <td id="${who}emp${i}" style="padding:3px;border-bottom:1px solid var(--border);text-align:center;font-weight:700;color:${clr}">${fmt(Math.round(b.s*0.06))}</td>
+      <td id="${who}vol${i}" style="padding:3px;border-bottom:1px solid var(--border);text-align:center;font-weight:700;color:${volPct>0?'var(--am)':'var(--g400)'}">${volPct>0?fmt(Math.round(b.s*volPct/100)):'—'}</td>
+      <td style="padding:3px;border-bottom:1px solid var(--border);text-align:center">
+        ${brackets.length>1?`<button onclick="removeBracket('${who}',${i})" style="background:var(--rdb);border:none;color:var(--rd);border-radius:4px;padding:2px 7px;cursor:pointer;font-size:11px;font-weight:700">✕</button>`:'—'}
+      </td>
+    </tr>`;
+  });
+  h+=`</tbody></table>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+      <button onclick="addBracket('${who}')" style="background:white;border:1px solid ${clr};color:${clr};border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;font-weight:700">＋ 新增薪資級距</button>
+      <span id="${who}cov" style="font-size:11px;font-weight:700;color:${covCls}">${covTxt}</span>
+    </div>
+    <div style="border-top:1px solid rgba(0,0,0,.06);padding-top:8px">
+      <div style="font-size:12px;font-weight:700;color:${clr};margin-bottom:5px">自願提繳比例 <span style="font-weight:400;color:var(--g400);font-size:10px">（稅前扣除，最高6%）</span></div>
+      <div style="display:flex;gap:3px;flex-wrap:wrap">`;
+  for(let p2=0;p2<=6;p2++){
+    const act=volPct===p2;
+    h+=`<button id="${who}vbtn${p2}" onclick="${who}VolPct=${p2};updateLP()"
+      style="padding:4px 10px;border-radius:6px;border:1.5px solid ${act?clr:'var(--border)'};
+      background:${act?clr:'white'};color:${act?'white':'var(--g600)'};
+      font-size:11px;font-weight:700;cursor:pointer;transition:.15s">${p2}%${p2===0?' (雇主)':p2===6?' (上限)':''}</button>`;
+  }
+  h+=`</div></div></div>`;
+  return h;
+}
+function buildLPResults(){
+  const rate=+el('rateSel').value, v=viewMode;
+  const PA=getProfile('A'), PB=getProfile('B');
+  const showA=v!=='B', showB=v!=='A';
+  const hP=[], wP=[];
+  for(let p=0;p<=6;p++){
+    hP.push(projectLP(PA.laborBal,aBrackets,p,rate,Math.max(0,65-aBracketAge)));
+    wP.push(projectLP(PB.laborBal,bBrackets,p,rate,Math.max(0,65-bBracketAge)));
+  }
+  const hSel=hP[aVolPct], wSel=wP[bVolPct];
+  const hM=Math.round(hSel/H_COEF), wM=Math.round(wSel/W_COEF);
+  let html='<hr style="margin:14px 0">';
+  html+=`<div style="font-size:12px;font-weight:700;color:var(--db);margin-bottom:10px">65歲預估結果（投報率 ${(rate*100).toFixed(0)}%）</div>`;
+  html+=`<div class="${showA&&showB?'g3':'g2'}" style="margin-bottom:14px">`;
+  if(showA)html+=`<div class="mcrd bc"><div class="mlbl">${PA.name}65歲餘額（自提${aVolPct}%）</div><div class="mval">${fmtM(hSel)}</div><div class="msub">月領約 ${fmt(hM)}</div></div>`;
+  if(showB)html+=`<div class="mcrd gc"><div class="mlbl">${PB.name}65歲餘額（自提${bVolPct}%）</div><div class="mval">${fmtM(wSel)}</div><div class="msub">月領約 ${fmt(wM)}</div></div>`;
+  if(showA&&showB)html+=`<div class="mcrd goc"><div class="mlbl">合計預估餘額</div><div class="mval">${fmtM(hSel+wSel)}</div><div class="msub">月領合計 ${fmt(hM+wM)}</div></div>`;
+  html+=`</div>`;
+  html+=`<div style="font-size:12px;font-weight:700;color:var(--db);margin-bottom:7px">自提比例效益比較表</div>
+  <div style="overflow-x:auto"><table><thead><tr><th>自提比例</th>
+    ${showA?`<th style="background:var(--mb)">${PA.name}月提撥</th><th style="background:var(--mb)">${PA.name}65歲餘額</th><th style="background:#163d6b">${PA.name}月領</th>`:''}
+    ${showB?`<th style="background:var(--dg)">${PB.name}月提撥</th><th style="background:var(--dg)">${PB.name}65歲餘額</th><th style="background:#0d4730">${PB.name}月領</th>`:''}
+    ${showA&&showB?`<th style="background:#0d4730">合計月領</th>`:''}</tr></thead><tbody>`;
+  const hLS=aBrackets.length?aBrackets[aBrackets.length-1].s:45800;
+  const wLS=bBrackets.length?bBrackets[bBrackets.length-1].s:45800;
+  for(let p=0;p<=6;p++){
+    const hm=Math.round(hP[p]/H_COEF), wm=Math.round(wP[p]/W_COEF);
+    const hmc=Math.round(hLS*(0.06+p/100)), wmc=Math.round(wLS*(0.06+p/100));
+    const rc=showA&&showB?(p===aVolPct&&p===bVolPct?'sel-a':p===aVolPct?'sel-b':p===bVolPct?'sel-g':'')
+                          :(showA&&p===aVolPct?'sel-b':showB&&p===bVolPct?'sel-g':'');
+    html+=`<tr class="${rc}">
+      <td style="font-weight:700">${p}%${p===0?' <span style="font-size:10px;color:var(--g400)">(僅雇主)</span>':p===6?' <span style="font-size:10px;color:var(--am)">(上限)</span>':''}</td>
+      ${showA?`<td style="color:var(--mb)">${fmt(hmc)}</td><td style="font-weight:700;color:var(--mb)">${fmtM(hP[p])}</td><td style="font-weight:700;color:var(--mb)">${fmt(hm)}</td>`:''}
+      ${showB?`<td style="color:var(--dg)">${fmt(wmc)}</td><td style="font-weight:700;color:var(--dg)">${fmtM(wP[p])}</td><td style="font-weight:700;color:var(--dg)">${fmt(wm)}</td>`:''}
+      ${showA&&showB?`<td style="font-weight:700;color:var(--dg);font-size:13px">${fmt(hm+wm)}</td>`:''}</tr>`;
+  }
+  html+=`</tbody></table></div>`;
+  if((showA&&aVolPct>0)||(showB&&bVolPct>0)){
+    html+=`<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">`;
+    if(showA&&aVolPct>0){const g=hP[aVolPct]-hP[0];html+=`<div style="background:var(--bgb);border-radius:7px;padding:7px 11px;font-size:12px">${PA.name}自提${aVolPct}% vs 0%：餘額多 <strong style="color:var(--mb)">${fmtM(g)}</strong>，月領多 <strong>${fmt(Math.round(g/H_COEF))}</strong></div>`;}
+    if(showB&&bVolPct>0){const g=wP[bVolPct]-wP[0];html+=`<div style="background:var(--bgg);border-radius:7px;padding:7px 11px;font-size:12px">${PB.name}自提${bVolPct}% vs 0%：餘額多 <strong style="color:var(--dg)">${fmtM(g)}</strong>，月領多 <strong>${fmt(Math.round(g/W_COEF))}</strong></div>`;}
+    html+=`</div>`;
+  }
+  const hY=Math.round(hLS*0.06*12), wY=Math.round(wLS*0.06*12);
+  html+=`<div class="alt s" style="margin-top:10px"><div class="alt-title">自提的稅賦優惠（自提金額全額從綜合所得扣除）</div>
+    <div class="alt-text">${showA?`${PA.name}自提6%/月 ${fmt(Math.round(hLS*0.06))}，年扣除 ${fmt(hY)}，稅率20%估算省稅約 <strong>${fmt(Math.round(hY*0.2))}</strong>。`:''}
+    ${showB?`${PB.name}自提6%/月 ${fmt(Math.round(wLS*0.06))}，年扣除 ${fmt(wY)}，稅率20%估算省稅約 <strong>${fmt(Math.round(wY*0.2))}</strong>。`:''}</div></div>`;
+  html+=`<div class="alt i" style="margin-top:8px"><div class="alt-title">查詢勞退帳戶餘額</div>
+    <div class="alt-text">至「勞動部勞工保險局 e 化服務系統」(eservice.bli.gov.tw) 登入 → 個人專戶資訊查詢。</div></div>`;
+  html+=`<p class="notice">※ 月領係數：男${H_COEF}月（約19年）、女${W_COEF}月（約24年）。剩餘月數以最後薪資級距自動延伸。</p>`;
+  return html;
+}
+function renderLaborPension(PA,PB,rate,v){
+  const showA=v!=='B', showB=v!=='A';
+  let h=`<div style="font-size:12px;color:var(--g600);margin-bottom:12px">依目前帳戶餘額試算至65歲退休時的勞退預估累積金額。設定薪資投保級距與自提比例，即可模擬不同方案。</div>`;
+  h+=`<div class="g2" id="lpBracketGrid">`;
+  if(showA)h+=`<div>${buildBracketPanel('a',PA,rate)}</div>`;
+  if(showB)h+=`<div>${buildBracketPanel('b',PB,rate)}</div>`;
+  h+=`</div><div id="lprojSection"></div>`;
+  el('laborBody').innerHTML=h;
+  updateLP();
+}
+
+// ══ CHARTS ═════════════════════════════════════════════════════
+function updateCharts(PA,PB,rate,life,v){
+  const showA=v!=='B', showB=v!=='A';
+  const retAge=showA&&showB?Math.min(PA.retireAge,PB.retireAge):showA?PA.retireAge:PB.retireAge;
+  const ages=[]; for(let a=retAge;a<=life;a++) ages.push(a);
+  const aP65=pensionMonthly(PA,PA.retireAge,rate), bP65=pensionMonthly(PB,PB.retireAge,rate);
+  const aTr=transitMonthly(PA,PA.retireAge,rate), bTr=transitMonthly(PB,PB.retireAge,rate);
+  const aL=liLump(PA,PA.retireAge), bL=liLump(PB,PB.retireAge);
+  const aEarly=liEarly(PA,PA.retireAge)+laborMonthlyAt(PA,PA.retireAge,rate);
+  const bEarly=liEarly(PB,PB.retireAge)+laborMonthlyAt(PB,PB.retireAge,rate);
+  const lumpFixed=(showA?aL:0)+(showB?bL:0);
+  let cumA=0, cumB=0;
+  const dA=[],dB=[],dC=[];
+  ages.forEach(a=>{
+    const penA=a<65?((showA?aTr:0)+(showB?bTr:0)):((showA?aP65:0)+(showB?bP65:0));
+    const penB=(showA?aEarly:0)+(showB?bEarly:0);
+    cumA+=penA*12; cumB+=penB*12;
+    dA.push(Math.round(cumA/10000)); dB.push(Math.round(cumB/10000)); dC.push(Math.round(lumpFixed/10000));
+  });
+  const labels=ages.map(a=>a+'歲');
+  if(lcInst)lcInst.destroy();
+  lcInst=new Chart(el('lifetimeChart').getContext('2d'),{type:'line',data:{labels,datasets:[
+    {label:'推薦策略',data:dA,borderColor:'#1A4A7A',backgroundColor:'rgba(26,74,122,.08)',borderWidth:2.5,pointRadius:0,tension:.3,fill:true},
+    {label:'提早月領',data:dB,borderColor:'#1D8A5E',backgroundColor:'rgba(29,138,94,.06)',borderWidth:2,pointRadius:0,tension:.3,fill:true,borderDash:[4,2]},
+    {label:'一次領',data:dC,borderColor:'#D97706',backgroundColor:'transparent',borderWidth:2,pointRadius:0,borderDash:[8,4]},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toLocaleString()}萬元`}}},
+    scales:{x:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10},maxTicksLimit:12}},
+            y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10},callback:x=>x+'萬'}}}}});
+  const aAges=[],aData=[];
+  for(let a=retAge;a<=Math.min(life,retAge+29);a++){
+    aAges.push(a+'歲');
+    const m=a<65?((showA?aTr:0)+(showB?bTr:0)):((showA?aP65:0)+(showB?bP65:0));
+    aData.push(Math.round(m*12/10000));
+  }
+  const bClr=aAges.map((_,i)=>retAge+i<65?'rgba(26,74,122,0.75)':'rgba(15,76,53,0.8)');
+  if(acInst)acInst.destroy();
+  acInst=new Chart(el('annualChart').getContext('2d'),{type:'bar',data:{labels:aAges,datasets:[{label:'年收入（萬）',data:aData,backgroundColor:bClr,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y}萬元/年`}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:9},maxTicksLimit:16}},y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:9},callback:x=>x+'萬'}}}}});
+}
+
+// ══ INIT ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  el('aRetireAge').addEventListener('input',e=>el('aRetireLbl').textContent=e.target.value+' 歲');
+  el('bRetireAge').addEventListener('input',e=>el('bRetireLbl').textContent=e.target.value+' 歲');
+  // 初始化：隱藏原住民給付欄位（預設否）
+  el('aIndigClaimWrap').classList.add('v-hide');
+  el('bIndigClaimWrap').classList.add('v-hide');
+  applyViewLayout();
+  calc();
+});
+</script>
+</body>
+</html>
